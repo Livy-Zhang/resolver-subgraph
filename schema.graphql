@@ -1,0 +1,185 @@
+"""Global mutable protocol state; id is always `global`."""
+type Protocol @entity(immutable: false) {
+  id: ID!
+  totalDelegated: BigInt!
+  freezingPeriod: BigInt!
+  minSelfStake: BigInt!
+  thawingPeriod: BigInt!
+  updatedAt: BigInt!
+  updatedBlock: BigInt!
+}
+
+"""Current on-chain state for a resolver; id is the resolver address."""
+type Resolver @entity(immutable: false) {
+  id: ID!
+  activeSelfStake: BigInt!
+  unstakingAmount: BigInt!
+  delegatedAmount: BigInt!
+  operatorAuthorizations: [OperatorAuthorization!]! @derivedFrom(field: "resolver")
+  rewardsDistributor: RewardsDistributor @derivedFrom(field: "resolver")
+  updatedAt: BigInt!
+  updatedBlock: BigInt!
+}
+
+"""Current state of a resolver's rewards distributor; id is the distributor address."""
+type RewardsDistributor @entity(immutable: false) {
+  id: ID!
+  resolver: Resolver!
+  distributor: Bytes!
+  rewardAddress: Bytes!
+  rewardsUpdater: Bytes!
+  rewardRate: BigInt!
+  createdAt: BigInt!
+  createdBlock: BigInt!
+  updatedAt: BigInt!
+  updatedBlock: BigInt!
+}
+
+"""Current authorization state for an operator managed by a resolver."""
+type OperatorAuthorization @entity(immutable: false) {
+  id: ID!
+  resolver: Resolver!
+  operator: Bytes!
+  allowed: Boolean!
+  updatedAt: BigInt!
+  updatedBlock: BigInt!
+}
+
+"""Current delegation position for a delegator; id is the delegator address."""
+type Delegation @entity(immutable: false) {
+  id: ID!
+  delegator: Bytes!
+  resolver: Resolver!
+  amount: BigInt!
+  updatedAt: BigInt!
+  updatedBlock: BigInt!
+}
+
+type DelegatedEvent @entity(immutable: true) {
+  id: ID!
+  delegator: Bytes!
+  resolver: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type UndelegatedEvent @entity(immutable: true) {
+  id: ID!
+  delegator: Bytes!
+  resolver: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type RedelegatedEvent @entity(immutable: true) {
+  id: ID!
+  delegator: Bytes!
+  oldResolver: Bytes!
+  newResolver: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type FreezingPeriodUpdatedEvent @entity(immutable: true) {
+  id: ID!
+  freezingPeriod: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type StakedEvent @entity(immutable: true) {
+  id: ID!
+  resolver: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type UnstakedEvent @entity(immutable: true) {
+  id: ID!
+  resolver: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type StakedWithdrawnEvent @entity(immutable: true) {
+  id: ID!
+  resolver: Bytes!
+  to: Bytes!
+  amount: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type OperatorUpdatedEvent @entity(immutable: true) {
+  id: ID!
+  resolver: Bytes!
+  operator: Bytes!
+  allowed: Boolean!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type MinSelfStakeUpdatedEvent @entity(immutable: true) {
+  id: ID!
+  minSelfStake: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type ThawingPeriodUpdatedEvent @entity(immutable: true) {
+  id: ID!
+  thawingPeriod: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type DistributorCreatedEvent @entity(immutable: true) {
+  id: ID!
+  resolver: Bytes!
+  distributor: Bytes!
+  rewardsUpdater: Bytes!
+  rewardAddress: Bytes!
+  rewardRate: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
+
+type RewardRateUpdatedEvent @entity(immutable: true) {
+  id: ID!
+  resolver: Bytes!
+  distributor: Bytes!
+  rewardAddress: Bytes!
+  previousRewardRate: BigInt!
+  newRewardRate: BigInt!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+  transactionHash: Bytes!
+  logIndex: BigInt!
+}
