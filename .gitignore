@@ -2,5 +2,6 @@ node_modules/
 generated/
 build/
 .env
-tests/*.wasm
+tests/.bin/
+tests/.docker/
 tests/.latest.json

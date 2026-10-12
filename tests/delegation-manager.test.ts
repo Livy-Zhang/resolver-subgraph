@@ -5,7 +5,7 @@ import {
   newTypedMockEvent,
   test,
 } from "matchstick-as/assembly/index";
-import { Address, BigInt, Bytes, ethereum } from "@graphprotocol/graph-ts";
+import { Address, BigInt, Bytes, ethereum, store } from "@graphprotocol/graph-ts";
 
 import {
   Delegated,
@@ -111,6 +111,25 @@ test("decreases a partially undelegated position without removing it", () => {
   assert.fieldEquals("Protocol", "global", "totalDelegated", "60");
 });
 
+test("records an anomalous undelegation when the delegation is missing", () => {
+  handleUndelegated(createUndelegatedEvent(40, 2));
+
+  const id = "0x0000000000000000000000000000000000000000000000000000000000000001-2";
+  assert.fieldEquals("UndelegatedEvent", id, "amount", "40");
+  assert.fieldEquals("UndelegatedEvent", id, "anomaly", "MISSING_DELEGATION");
+});
+
+test("records an anomalous undelegation when the resolver is missing", () => {
+  handleDelegated(createDelegatedEvent(100, 1));
+  store.remove("Resolver", BOB.toHexString());
+  handleUndelegated(createUndelegatedEvent(40, 2));
+
+  const id = "0x0000000000000000000000000000000000000000000000000000000000000001-2";
+  assert.fieldEquals("UndelegatedEvent", id, "resolver", BOB.toHexString());
+  assert.fieldEquals("UndelegatedEvent", id, "amount", "40");
+  assert.fieldEquals("UndelegatedEvent", id, "anomaly", "MISSING_RESOLVER");
+});
+
 test("moves the full delegation between resolvers without changing protocol total", () => {
   handleDelegated(createDelegatedEvent(100, 1));
   handleRedelegated(createRedelegatedEvent(2));
@@ -122,6 +141,25 @@ test("moves the full delegation between resolvers without changing protocol tota
   assert.fieldEquals("Protocol", "global", "totalDelegated", "100");
   assert.entityCount("DelegatedEvent", 1);
   assert.entityCount("RedelegatedEvent", 1);
+});
+
+test("records an anomalous redelegation when the delegation is missing", () => {
+  handleRedelegated(createRedelegatedEvent(2));
+
+  const id = "0x0000000000000000000000000000000000000000000000000000000000000001-2";
+  assert.fieldEquals("RedelegatedEvent", id, "oldResolver", BOB.toHexString());
+  assert.fieldEquals("RedelegatedEvent", id, "newResolver", CAROL.toHexString());
+  assert.fieldEquals("RedelegatedEvent", id, "anomaly", "MISSING_DELEGATION");
+});
+
+test("records an anomalous redelegation when the old resolver is missing", () => {
+  handleDelegated(createDelegatedEvent(100, 1));
+  store.remove("Resolver", BOB.toHexString());
+  handleRedelegated(createRedelegatedEvent(2));
+
+  const id = "0x0000000000000000000000000000000000000000000000000000000000000001-2";
+  assert.fieldEquals("RedelegatedEvent", id, "amount", "100");
+  assert.fieldEquals("RedelegatedEvent", id, "anomaly", "MISSING_OLD_RESOLVER");
 });
 
 test("records freezing-period updates", () => {

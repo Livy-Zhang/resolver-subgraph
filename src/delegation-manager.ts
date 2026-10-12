@@ -1,4 +1,4 @@
-import { Address, BigInt, store } from "@graphprotocol/graph-ts";
+import { Address, BigInt, log, store } from "@graphprotocol/graph-ts";
 
 import {
   Delegated as DelegatedContractEvent,
@@ -91,11 +91,42 @@ export function handleDelegated(event: DelegatedContractEvent): void {
 export function handleUndelegated(event: UndelegatedContractEvent): void {
   const delegatorId = event.params.delegator.toHexString();
   let delegation = Delegation.load(delegatorId);
-  if (delegation == null) return;
+  if (delegation == null) {
+    log.warning("Undelegated event has no delegation: tx={}, delegator={}", [
+      event.transaction.hash.toHexString(),
+      delegatorId,
+    ]);
+    const history = new UndelegatedEvent(eventId(event.transaction.hash.toHexString(), event.logIndex));
+    history.delegator = event.params.delegator;
+    history.amount = event.params.amount;
+    history.anomaly = "MISSING_DELEGATION";
+    history.timestamp = event.block.timestamp;
+    history.blockNumber = event.block.number;
+    history.transactionHash = event.transaction.hash;
+    history.logIndex = event.logIndex;
+    history.save();
+    return;
+  }
 
   const resolverId = delegation.resolver;
   let resolver = Resolver.load(resolverId);
-  if (resolver == null) return;
+  if (resolver == null) {
+    log.warning("Undelegated event has no resolver: tx={}, resolver={}", [
+      event.transaction.hash.toHexString(),
+      resolverId,
+    ]);
+    const history = new UndelegatedEvent(eventId(event.transaction.hash.toHexString(), event.logIndex));
+    history.delegator = event.params.delegator;
+    history.resolver = Address.fromString(resolverId);
+    history.amount = event.params.amount;
+    history.anomaly = "MISSING_RESOLVER";
+    history.timestamp = event.block.timestamp;
+    history.blockNumber = event.block.number;
+    history.transactionHash = event.transaction.hash;
+    history.logIndex = event.logIndex;
+    history.save();
+    return;
+  }
 
   const protocol = getOrCreateProtocol();
   const remainingAmount = delegation.amount.minus(event.params.amount);
@@ -132,10 +163,43 @@ export function handleUndelegated(event: UndelegatedContractEvent): void {
 export function handleRedelegated(event: RedelegatedContractEvent): void {
   const delegatorId = event.params.delegator.toHexString();
   let delegation = Delegation.load(delegatorId);
-  if (delegation == null) return;
+  if (delegation == null) {
+    log.warning("Redelegated event has no delegation: tx={}, delegator={}", [
+      event.transaction.hash.toHexString(),
+      delegatorId,
+    ]);
+    const history = new RedelegatedEvent(eventId(event.transaction.hash.toHexString(), event.logIndex));
+    history.delegator = event.params.delegator;
+    history.oldResolver = event.params.oldResolver;
+    history.newResolver = event.params.newResolver;
+    history.anomaly = "MISSING_DELEGATION";
+    history.timestamp = event.block.timestamp;
+    history.blockNumber = event.block.number;
+    history.transactionHash = event.transaction.hash;
+    history.logIndex = event.logIndex;
+    history.save();
+    return;
+  }
 
   let oldResolver = Resolver.load(event.params.oldResolver.toHexString());
-  if (oldResolver == null) return;
+  if (oldResolver == null) {
+    log.warning("Redelegated event has no old resolver: tx={}, resolver={}", [
+      event.transaction.hash.toHexString(),
+      event.params.oldResolver.toHexString(),
+    ]);
+    const history = new RedelegatedEvent(eventId(event.transaction.hash.toHexString(), event.logIndex));
+    history.delegator = event.params.delegator;
+    history.oldResolver = event.params.oldResolver;
+    history.newResolver = event.params.newResolver;
+    history.amount = delegation.amount;
+    history.anomaly = "MISSING_OLD_RESOLVER";
+    history.timestamp = event.block.timestamp;
+    history.blockNumber = event.block.number;
+    history.transactionHash = event.transaction.hash;
+    history.logIndex = event.logIndex;
+    history.save();
+    return;
+  }
 
   const newResolver = getOrCreateResolver(event.params.newResolver.toHexString());
   const amount = delegation.amount;

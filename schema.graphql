@@ -69,8 +69,11 @@ type DelegatedEvent @entity(immutable: true) {
 type UndelegatedEvent @entity(immutable: true) {
   id: ID!
   delegator: Bytes!
-  resolver: Bytes!
+  """Absent when the event could not be associated with a stored delegation."""
+  resolver: Bytes
   amount: BigInt!
+  """Set when the mapping could not safely update the corresponding state entity."""
+  anomaly: String
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!
@@ -82,7 +85,10 @@ type RedelegatedEvent @entity(immutable: true) {
   delegator: Bytes!
   oldResolver: Bytes!
   newResolver: Bytes!
-  amount: BigInt!
+  """Absent when the source Delegation entity was missing at indexing time."""
+  amount: BigInt
+  """Set when the mapping could not safely update the corresponding state entity."""
+  anomaly: String
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!
@@ -173,11 +179,15 @@ type DistributorCreatedEvent @entity(immutable: true) {
 
 type RewardRateUpdatedEvent @entity(immutable: true) {
   id: ID!
-  resolver: Bytes!
+  """Absent when the distributor creation record was unavailable."""
+  resolver: Bytes
   distributor: Bytes!
-  rewardAddress: Bytes!
+  """Absent when the distributor creation record was unavailable."""
+  rewardAddress: Bytes
   previousRewardRate: BigInt!
   newRewardRate: BigInt!
+  """Set when the mapping could not safely update the corresponding state entity."""
+  anomaly: String
   timestamp: BigInt!
   blockNumber: BigInt!
   transactionHash: Bytes!

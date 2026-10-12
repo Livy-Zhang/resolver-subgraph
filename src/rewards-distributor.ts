@@ -1,4 +1,4 @@
-import { BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import { RewardRateUpdated as RewardRateUpdatedContractEvent } from "../generated/templates/RewardsDistributor/RewardsDistributor";
 import { RewardRateUpdatedEvent, RewardsDistributor } from "../generated/schema";
@@ -10,7 +10,23 @@ function eventId(hash: string, logIndex: BigInt): string {
 export function handleRewardRateUpdated(event: RewardRateUpdatedContractEvent): void {
   const distributorId = event.address.toHexString();
   const distributor = RewardsDistributor.load(distributorId);
-  if (distributor == null) return;
+  if (distributor == null) {
+    log.warning("RewardRateUpdated event has no distributor: tx={}, distributor={}", [
+      event.transaction.hash.toHexString(),
+      distributorId,
+    ]);
+    const history = new RewardRateUpdatedEvent(eventId(event.transaction.hash.toHexString(), event.logIndex));
+    history.distributor = event.address;
+    history.previousRewardRate = event.params.previousRewardRate;
+    history.newRewardRate = event.params.newRewardRate;
+    history.anomaly = "MISSING_DISTRIBUTOR";
+    history.timestamp = event.block.timestamp;
+    history.blockNumber = event.block.number;
+    history.transactionHash = event.transaction.hash;
+    history.logIndex = event.logIndex;
+    history.save();
+    return;
+  }
 
   distributor.rewardRate = event.params.newRewardRate;
   distributor.updatedAt = event.block.timestamp;

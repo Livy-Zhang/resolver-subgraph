@@ -74,3 +74,13 @@ test("updates the current reward rate and preserves the update event", () => {
   assert.fieldEquals("RewardRateUpdatedEvent", "0x00000000000000000000000000000000000000000000000000000000000000f1-2", "rewardAddress", REWARD_TOKEN.toHexString());
   assert.entityCount("RewardRateUpdatedEvent", 1);
 });
+
+test("records an anomalous reward-rate update when the distributor is missing", () => {
+  handleRewardRateUpdated(createRateUpdatedEvent(1_000, 1_500));
+
+  const id = "0x00000000000000000000000000000000000000000000000000000000000000f1-2";
+  assert.fieldEquals("RewardRateUpdatedEvent", id, "distributor", DISTRIBUTOR.toHexString());
+  assert.fieldEquals("RewardRateUpdatedEvent", id, "previousRewardRate", "1000");
+  assert.fieldEquals("RewardRateUpdatedEvent", id, "newRewardRate", "1500");
+  assert.fieldEquals("RewardRateUpdatedEvent", id, "anomaly", "MISSING_DISTRIBUTOR");
+});
